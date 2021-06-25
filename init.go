@@ -3,8 +3,6 @@ package consulagt
 import (
 	"io"
 	"net/http"
-	"os"
-	"os/signal"
 	"time"
 )
 
@@ -37,19 +35,10 @@ func init() {
 	go registering()
 }
 func registering() {
-	exitSignalChan := make(chan os.Signal, 1)
-	signal.Notify(exitSignalChan)
 	ticker := time.NewTicker(time.Second * 5)
 	defer ticker.Stop()
 	for {
 		select {
-		case <-exitSignalChan:
-			for serviceID, svcMeta := range registeredSvc {
-				if svcMeta.RegistStatus {
-					deregisterByServiceID(serviceID)
-				}
-			}
-			return
 		case <-ticker.C:
 			for _, svcMeta := range registeredSvc {
 				go func(meta *ServiceMeta) {

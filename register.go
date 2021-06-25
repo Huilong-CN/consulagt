@@ -22,6 +22,15 @@ func Register(servicesName, httpHealthyAddr string, metas map[string]string, ser
 	return nil
 }
 
+// deregister services
+func Stop() {
+	for serviceID, svcMeta := range registeredSvc {
+		if svcMeta.RegistStatus {
+			deregisterByServiceID(serviceID)
+		}
+	}
+}
+
 func regist2ConsulAgent(serviceMeta *ServiceMeta) error {
 	addRegistered(serivcesID(serviceMeta.ServiceName, serviceMeta.ServicesAddr), serviceMeta)
 	err := defaultClient().Agent().ServiceRegister(genAgentServiceRegistration(serviceMeta.ServiceName, serviceMeta.ServicesAddr, serviceMeta.HTTPHealthyAddr, serviceMeta.Metas))
