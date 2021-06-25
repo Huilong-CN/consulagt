@@ -23,13 +23,8 @@ func Register(servicesName, httpHealthyAddr string, metas map[string]string, ser
 }
 
 func regist2ConsulAgent(serviceMeta *ServiceMeta) error {
-	consulCli, err := NewClient()
-	if err != nil {
-		log.Printf("register server error : %v", err)
-		return err
-	}
 	addRegistered(serivcesID(serviceMeta.ServiceName, serviceMeta.ServicesAddr), serviceMeta)
-	err = consulCli.Agent().ServiceRegister(genAgentServiceRegistration(serviceMeta.ServiceName, serviceMeta.ServicesAddr, serviceMeta.HTTPHealthyAddr, serviceMeta.Metas))
+	err := defaultClient().Agent().ServiceRegister(genAgentServiceRegistration(serviceMeta.ServiceName, serviceMeta.ServicesAddr, serviceMeta.HTTPHealthyAddr, serviceMeta.Metas))
 	if err != nil {
 		log.Printf("regist services:%s servicesAddr:%s err:%v", serviceMeta.ServiceName, serviceMeta.ServicesAddr, err)
 		return err
@@ -44,12 +39,7 @@ func Deregister(servicesName, servicesAddr string) error {
 }
 
 func deregisterByServiceID(serivcesID string) error {
-	consulCli, err := NewClient()
-	if err != nil {
-		log.Printf("register server error : %+v ", err)
-		return err
-	}
-	err = consulCli.Agent().ServiceDeregister(serivcesID)
+	err := defaultClient().Agent().ServiceDeregister(serivcesID)
 	if err != nil {
 		log.Printf("deregist servicesid:%s err:%v", serivcesID, err)
 		return err

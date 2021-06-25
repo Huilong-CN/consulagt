@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"syscall"
 	"time"
 )
 
@@ -36,11 +35,10 @@ func init() {
 		io.WriteString(w, "pong")
 	})
 	go registering()
-	go cachingServices()
 }
 func registering() {
 	exitSignalChan := make(chan os.Signal, 1)
-	signal.Notify(exitSignalChan, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	signal.Notify(exitSignalChan)
 	ticker := time.NewTicker(time.Second * 5)
 	defer ticker.Stop()
 	for {
@@ -51,30 +49,19 @@ func registering() {
 					deregisterByServiceID(serviceID)
 				}
 			}
-			os.Exit(0)
+			return
 		case <-ticker.C:
 			for _, svcMeta := range registeredSvc {
 				go func(meta *ServiceMeta) {
 					regist2ConsulAgent(meta)
 				}(svcMeta)
 			}
+			// caching services
+			loadServices()
 		}
 	}
 }
 
-func cachingServices() {
-	tick := time.NewTicker(time.Second * 5)
-	defer tick.Stop()
-	loadServices()
-	for {
-		select {
-		case <-tick.C:
-			if err := loadServices(); err != nil {
-				continue
-			}
-		}
-	}
-}
 func loadServices() error {
 	list, err := Services()
 	if err != nil {
