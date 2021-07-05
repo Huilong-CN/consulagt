@@ -3,32 +3,26 @@ package consulagt
 import (
 	"io"
 	"net/http"
+	"sync"
 	"time"
 )
-
-var registeredSvc map[string]*ServiceMeta
-
-// var defaultHTTPHealthyURL string
-
-// var agentServices *cache.Cache = cache.New(10*time.Second, 3*time.Second) //进程缓存值 有效期10s,检查间隔5s
 
 //DefaultHealthy set healthy check by default
 // 关闭健康检查
 const DefaultHealthy = "default-healthy"
 
 func addRegistered(serviceID string, svcMeta *ServiceMeta) {
-	registeredSvc[serviceID] = svcMeta
+	registeredSvc.Store(serviceID, svcMeta)
 }
 
 func markRegistered(serviceID string) {
 	// registeredSvc[serviceID] = true
-	if svc, ok := registeredSvc[serviceID]; ok {
+	if svc, ok := registeredSvc.Get(serviceID); ok {
 		svc.RegistStatus = true
 	}
 }
 
 func init() {
-	registeredSvc = make(map[string]*ServiceMeta)
 	http.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
 		io.WriteString(w, "pong")
 	})
@@ -40,24 +34,25 @@ func registering() {
 	for {
 		select {
 		case <-ticker.C:
-			for _, svcMeta := range registeredSvc {
+			registeredSvc.RangeDo(func(key interface{}, meta *ServiceMeta) {
 				go func(meta *ServiceMeta) {
 					regist2ConsulAgent(meta)
-				}(svcMeta)
-			}
-			// caching services
+				}(meta)
+			})
 			loadServices()
 		}
 	}
 }
 
 func loadServices() error {
+	newServiceCache := &ServiceStore{&sync.Map{}}
 	list, err := Services()
 	if err != nil {
 		return err
 	}
 	for _, s := range list {
-		serviceCache.Store(s.ID, s)
+		newServiceCache.Store(s.ID, s)
 	}
+	serviceCache = newServiceCache
 	return nil
 }

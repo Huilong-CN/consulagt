@@ -24,11 +24,12 @@ func Register(servicesName, httpHealthyAddr string, metas map[string]string, ser
 
 // deregister services
 func Stop() {
-	for serviceID, svcMeta := range registeredSvc {
-		if svcMeta.RegistStatus {
+	registeredSvc.RangeDo(func(key interface{}, meta *ServiceMeta) {
+		serviceID, ok := key.(string)
+		if ok && meta.RegistStatus {
 			deregisterByServiceID(serviceID)
 		}
-	}
+	})
 }
 
 func regist2ConsulAgent(serviceMeta *ServiceMeta) error {
