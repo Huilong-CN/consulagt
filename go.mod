@@ -1,4 +1,4 @@
-module github.com/Huilong-CN/consulagt
+module github.com/huilong-cn/consulagt
 
 go 1.14
 
